@@ -98,7 +98,10 @@ class AuthService {
   async isAuthenticated(req, res, next) {
     let decoded
     const token = req.cookies.jwt
-    if (!token) return next(new AppError(401, "Please provide credentials"))
+    if (!token)
+      return res
+        .status(401)
+        .json({ status: "failed", message: "Token not present" })
     try {
       decoded = verifyToken(token, this.jwtSecret)
     } catch (error) {
@@ -117,7 +120,11 @@ class AuthService {
       }
     }
     const user = await this.User.findById(decoded.id)
-    if (!user) return next(new AppError(401, "User not found"))
+    if (!user) {
+      return res
+        .status(401)
+        .json({ status: "failed", message: "User not found" })
+    }
     req.user = user
     return next()
   }
