@@ -10,10 +10,10 @@ class AuthService {
   }
 
   //LOGIN
-  async login(req, res, next) {
+  login = async (req, res, next) => {
     const { email, password } = req.body
     if (!email || !password) {
-      return res.status(400, {
+      return res.status(400).json({
         status: "failed",
         message: "Please provide required credentials."
       })
@@ -21,7 +21,7 @@ class AuthService {
     const user = await this.User.findOne({ email }).select("+password")
 
     if (!user || !(await comparePassword(password, user.password))) {
-      return res.status(401, {
+      return res.status(401).json({
         status: "failed",
         message: "Incorrect email or password."
       })
@@ -50,24 +50,24 @@ class AuthService {
   }
 
   //SIGNUP
-  async signUp(req, res, next) {
+  signUp = async (req, res, next) => {
     const { confirmPassword, password, email } = req.body
-    const user = await User.findOne({ email })
+    const user = await this.User.findOne({ email })
     if (user) {
-      return res.status(400, {
+      return res.status(400).json({
         status: "failed",
         message: "Email is already registered."
       })
     }
     if (password !== confirmPassword) {
-      return res.status(400, {
+      return res.status(400).json({
         status: "failed",
         message: "Password and confirm password do not match."
       })
     }
     req.body.comparePassword = undefined
     req.body.password = await hashPassword(password, 12)
-    const newUser = await User.create(req.body)
+    const newUser = await this.User.create(req.body)
     const token = generateToken({
       id: newUser._id,
       secret: this.jwtSecret,
@@ -89,13 +89,13 @@ class AuthService {
   }
 
   //LOGOUT
-  logout(req, res) {
+  logout = async (req, res) => {
     res.cookie("jwt", "")
     res.json({ status: "success", message: "Logged out successfully" })
   }
 
   //ISAUTHENTICATED
-  async isAuthenticated(req, res, next) {
+  isAuthenticated = async (req, res, next) => {
     let decoded
     const token = req.cookies.jwt
     if (!token)
@@ -135,7 +135,8 @@ class AuthService {
       if (roles.includes(req.user.role)) {
         next()
       } else {
-        res.json({
+        res.status(403).json({
+          status: "failed",
           message: "You are not authorized"
         })
       }
